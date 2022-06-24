@@ -4,9 +4,9 @@ const fs = require('fs');
 const path = require('path');
 const child_process = require('child_process');
 
-const folderSrc = path.resolve(__dirname, '../web');
-const folderDst = path.resolve(__dirname, '../docs');
-const folderDel = path.resolve(__dirname, '../docs_del');
+const folderSrc = path.resolve(__dirname, '../docs');
+const folderDst = path.resolve(__dirname, '../dist');
+const folderDel = path.resolve(__dirname, '../dist_del');
 
 const compression = 0;
 // 0 = none
