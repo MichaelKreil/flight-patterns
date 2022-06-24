@@ -6,7 +6,7 @@ Based on the data quality we selected 37 airports, extracted the 2000 best fligh
 
 The `web` folder contains all JavaScript code to visualize these flight routes with WebGL (three.js).
 
-`build` contains a small build script to prepare and deploy the web application.
+`build` contains a small build script to prepare and deploy the web application. You can also run `./build.sh`
 
 **You can play around with the data at [data.info.graphics/flight-patterns](https://data.info.graphics/flight-patterns)**
 

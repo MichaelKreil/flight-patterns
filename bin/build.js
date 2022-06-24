@@ -5,31 +5,27 @@ const path = require('path');
 const child_process = require('child_process');
 
 const folderSrc = path.resolve(__dirname, '../web');
-const folderTmp = path.resolve(__dirname, '../dist_tmp');
-const folderDst = path.resolve(__dirname, '../dist');
-const folderDel = path.resolve(__dirname, '../dist_del');
+const folderDst = path.resolve(__dirname, '../docs');
+const folderDel = path.resolve(__dirname, '../docs_del');
 
-const compression = 2;
+const compression = 0;
 // 0 = none
 // 1 = fast (gzip)
 // 2 = thorough (zopfli)
 const embed = true;
 
+if (fs.existsSync(folderDst)) {
+	deleteFolder(folderDel);
+	renameFolder(folderDst, folderDel);
+}
 
-deleteFolder(folderDel);
-createFolder(folderTmp);
+createFolder(folderDst);
+scanFolder(folderSrc, folderDst);
 
-scanFolder(folderSrc, folderTmp);
 
-renameFolder(folderDst, folderDel);
-renameFolder(folderTmp, folderDst);
-
-deleteFolder(folderDel);
 
 function createFolder(folder) {
-	try {
-		fs.mkdirSync(folder);
-	} catch (e) {}
+	fs.mkdirSync(folder, {recursive:true});
 }
 
 function renameFolder(folderOld, folderNew) {
@@ -38,17 +34,7 @@ function renameFolder(folderOld, folderNew) {
 }
 
 function deleteFolder(folder) {
-	if (fs.existsSync(folder)) {
-		fs.readdirSync(folder).forEach(file => {
-			var curFolder = path.resolve(folder, file);
-			if (fs.lstatSync(curFolder).isDirectory()) {
-				deleteFolder(curFolder);
-			} else {
-				fs.unlinkSync(curFolder);
-			}
-		});
-		fs.rmdirSync(folder);
-	}
+	if (fs.existsSync(folder)) fs.rmdirSync(folder, {recursive:true});
 }
 
 function scanFolder(src, dst) {
@@ -57,15 +43,15 @@ function scanFolder(src, dst) {
 	fs.readdirSync(src).forEach(entry => {
 		// check every entry in the src folder
 
-		var filenameSrc = path.resolve(src, entry);
-		var filenameDst = path.resolve(dst, entry);
+		let filenameSrc = path.resolve(src, entry);
+		let filenameDst = path.resolve(dst, entry);
 
 		if (fs.statSync(filenameSrc).isDirectory()) {
 			// entry is a directory
 			scanFolder(filenameSrc, filenameDst);
 		} else {
 			// entry is a file
-			var ext = filenameSrc.split('.').pop();
+			let ext = filenameSrc.split('.').pop();
 			switch (ext) {
 				// ignored files
 				case 'DS_Store':
@@ -122,7 +108,7 @@ function ensureFolder(folder) {
 }
 
 function compactHTMLFile(src, dst) {
-	var html = fs.readFileSync(src, 'utf8');
+	let html = fs.readFileSync(src, 'utf8');
 
 	if (embed) {
 		html = html.replace(/\s*\n\s*/g,'\n');
@@ -133,13 +119,18 @@ function compactHTMLFile(src, dst) {
 	fs.writeFileSync(dst, html, 'utf8');
 
 	function embedJavaScript(html) {
-		var link = html.match(/src=\"(.*?)\"/i);
+		let link = html.match(/src=\"(.*?)\"/i);
 		if (!link) return html;
 
 		link = path.resolve(path.dirname(src), link[1]);
-		var script = child_process.spawnSync('uglifyjs', [link]);
-		script = script.stdout.toString();
-		return '<script type="text/javascript">/*<![CDATA[*/'+script+'/*]]>*/</script>';
+		let uglify = child_process.spawnSync('uglifyjs', [link]);
+		if (uglify.error) {
+			console.log('maybe run "npm install uglify-js -g"')
+			console.log(uglify);
+			throw uglify.error;
+		}
+		uglify = uglify.stdout.toString();
+		return '<script type="text/javascript">/*<![CDATA[*/'+uglify+'/*]]>*/</script>';
 	}
 }
 
